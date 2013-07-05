@@ -1,17 +1,17 @@
-Step 1: Whatcha wanna do? 
-	- option 1: build a repose configuration
-	- option 2: test my configuration
-OPTION 1:
-	Step 2: Select your Repose version (2.8.0 is the only option right now)
-	Step 3: What do you want Repose to do?
-		- [filter] English name -- e.g. [rate-limiting filter] Rate Limit my app
-		- [auth-n filter] Authenticate my app with 3rd party Auth provider
-		- [auth-z filter] Authorize my app with 3rd party Auth provider
-		- [transform filter] Transform requests to my app from client and vice versa
-		- [validator filter] Validate incoming requests to my app against roles
-		- [compression filter] Compress and/or decompress incoming requests to my app and vice versa
-		- [ip-identity filter] Whitelist or blacklist various ip addresses
-		- [normalization filter] Add and/or remove incoming headers
+** Step 1: Whatcha wanna do? ** 
+	* option 1: build a repose configuration
+	* option 2: test my configuration
+** OPTION 1: **
+	** Step 2: Select your Repose version (2.8.0 is the only option right now) **
+	** Step 3: What do you want Repose to do? **
+		* [filter] English name -- e.g. [rate-limiting filter] Rate Limit my app
+		* [auth-n filter] Authenticate my app with 3rd party Auth provider
+		* [auth-z filter] Authorize my app with 3rd party Auth provider
+		* [transform filter] Transform requests to my app from client and vice versa
+		* [validator filter] Validate incoming requests to my app against roles
+		* [compression filter] Compress and/or decompress incoming requests to my app and vice versa
+		* [ip-identity filter] Whitelist or blacklist various ip addresses
+		* [normalization filter] Add and/or remove incoming headers
 	Step 4: You're going to need provide some details to make Repose work!
 		- for rate-limiting
 			- add groups with regex (add a regex tester)
