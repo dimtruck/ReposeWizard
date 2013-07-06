@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="bootstrap/css/wizard.css" rel="stylesheet" />
+    <link href="http://cdnjs.cloudflare.com/ajax/libs/chosen/0.9.15/chosen.css" rel="stylesheet" />
+    <style type="text/css">
+      .wizard-modal p {
+        margin: 0 0 10px;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body style="padding:30px;">
+    <button id="new-config-wizard" class="btn btn-primary">Create new Repose configuration</button>
+    <button id="test-config-wizard" class="btn btn-primary">Test existing configuration in Repose</button>
+    <div class="wizard" id="repose-wizard">
+      <h1>Repose Wizard</h1>
+          <div class="wizard-card" data-onValidated="setVersion" data-cardname="version">
+            <h3>Select version</h3>
+            <div class="wizard-input-section">
+              <div class="control-group">
+                <select name="version" id="version" data-bind="options: versions, value: selected_version"></select>
+              </div>
+            </div>
+          </div>
+          <div class="wizard-card" data-cardname="filters">
+            <h3>Filters</h3>
+            <div class="alert">
+                What do you want Repose to do?
+            </div>
+            <div class="wizard-input-section">
+              <div id="filter-accordion">
+                <!-- ko foreach: filters -->
+                <h3>
+                  <a href="#">
+                    <input type="checkbox" data-bind="checked: isSelected" />
+                    <span data-bind="text: english"/>
+                  </a>
+                </h3>
+                <div>
+                  <p data-bind="text: filter_list"/>
+                  <p data-bind="text: description"/>
+                </div>
+                <!-- /ko -->
+              </div>
+			</div>
+		  </div>
+          <div class="wizard-card" data-cardname="details">
+            <h3>Detailed Info!</h3>
+			<div class="alert">
+				You need to provide a few more information to make Repose rock!
+			</div>
+			<div class="wizard-input-section">
+                <div id="detail-accordion">
+                  <!-- ko foreach: details -->
+                  <h3 data-bind="text: filter"></h3>
+                  <div>
+                    <ul data-bind="foreach: configs">
+                      <li>
+                        <label data-bind="text: key"/>
+                        <input data-bind="value: value"/>
+                      </li>
+                    </ul>
+                  </div>
+                  <!-- /ko -->
+                </div>
+			</div>
+          </div>
+		
+		
+			<div class="wizard-error">
+				<div class="alert alert-error">
+					<strong>There was a problem</strong> with your submission.
+					Please correct the errors and re-submit.
+				</div>
+			</div>
+		
+			<div class="wizard-failure">
+				<div class="alert alert-error">
+					<strong>There was a problem</strong> submitting the form.
+					Please try again in a minute.
+				</div>
+			</div>
+		
+			<div class="wizard-success">
+				<div class="alert alert-success">
+					Successful submission
+				</div>
+		
+				<a class="btn create-another-config">Create another config</a>
+				<span style="padding:0 10px">or</span>
+				<a class="btn im-done">Done</a>
+			</div>
+		
+		</div>
+							
+		<script type="text/html" id="clientAuthTemplate">
+        
+        </script>
+        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+  		<script src="http://cdnjs.cloudflare.com/ajax/libs/chosen/0.9.15/chosen.jquery.min.js"></script>
+		<script src="bootstrap/js/bootstrap.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script>
+		<script src="bootstrap/js/wizard.min.js"></script>
+        <script type="text/javascript">
+          $(function() {
+            function WizardModel(){
+                var self = this;
+                self.versions = ko.observableArray([]);
+                self.filters = ko.observableArray([]);
+                self.details = ko.observableArray([]);
+                self.selected_version = ko.observable();
+
+                //$.fn.wizard.logging = true;
+                var wizard = $("#repose-wizard").wizard();
+                $(".chzn-select").chosen();
+                wizard.el.find(".wizard-ns-select").change(function() {
+                    wizard.el.find(".wizard-ns-detail").show();
+                });
+
+                wizard.el.find(".create-server-service-list").change(function() {
+                    var noOption = $(this).find("option:selected").length == 0;
+                    wizard.getCard(this).toggleAlert(null, noOption);
+                });
+                
+                wizard.cards["version"].on("loaded", function(card){
+                    //load the version here
+                    $.getJSON("/get_versions",function(versions){
+                      self.versions(versions);
+                    });
+                });
+
+                wizard.cards["filters"].on("reload", function(card){
+                    //load the version here
+                    $.getJSON("/get_filters/" + self.selected_version(),function(filters){
+                      var mappedFilters = $.map(filters,function(item){ return new Filter(item)});
+                      self.filters(mappedFilters);
+                      $("#filter-accordion").accordion();
+                      $('#filter-accordion input[type="checkbox"]').click(function(e) {
+                        e.stopPropagation();
+                      });
+                    });
+                });
+                
+                wizard.cards["details"].on("selected", function(card){
+                    //load the version here
+                    var filterstoSubmit = $.map(
+                        ko.utils.arrayFilter(self.filters(), function(filter) { return filter.isSelected() }), function(item){
+                            return item.id()
+                        }
+                    );
+                    console.log(filterstoSubmit);
+                    $.getJSON("/get_data_for_filter/" + filterstoSubmit.join(","),function(details){
+                      var mappedDetails = $.map(details,function(item){ return new Detail(item)});
+                      self.details(mappedDetails);
+                      $("#detail-accordion").accordion();
+                    });
+                });
+
+
+                wizard.on("submit", function(wizard) {
+                    var submit = {};
+
+                    setTimeout(function() {
+                        wizard.trigger("success");
+                        wizard.hideButtons();
+                        wizard._submitting = false;
+                        wizard.showSubmitCard("success");
+                        wizard._updateProgressBar(0);
+                    }, 2000);
+                });
+	
+
+                wizard.el.find(".wizard-success .im-done").click(function() {
+                    wizard.reset().close();
+                });
+
+                wizard.el.find(".wizard-success .create-another-config").click(function() {
+                    wizard.reset();
+                });
+	
+
+                $("#test-config-wizard").click(function() {
+                    wizard.show();
+                });
+	
+                $("#new-config-wizard").click(function() {
+                    wizard.show();
+                });
+            }
+          
+            ko.applyBindings(new WizardModel());
+          });
+          
+          function Filter(item){
+            this.id = ko.observable(item.id);
+            this.english = ko.observable(item.english);
+            this.filter_list = ko.observable(item.filter_list);
+            this.description = ko.observable(item.description);
+            this.isSelected = ko.observable(false);
+          }
+          
+          function Detail(item){
+            this.id = ko.observable(item.id);
+            this.filter = ko.observable(item.filter);
+            var mappedConfigs = $.map(item.configs,function(config){ return new Config(config)});
+            this.configs = ko.observableArray(mappedConfigs);
+          }
+          
+          function Config(item){
+            this.key = item.key;
+            this.value = ko.observable(item.value);
+          }
+          
+function setVersion(card) {
+	var version = $("#version").val();
+	card.wizard.setSubtitle(version);
+}
+
+
+
+</script>
+		
+		
+	
+	</body>
+</html>
+
