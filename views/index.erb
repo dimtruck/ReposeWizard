@@ -57,16 +57,45 @@
                   <!-- ko foreach: details -->
                   <h3 data-bind="text: filter"></h3>
                   <div>
-                    <ul data-bind="foreach: configs">
-                      <li>
-                        <label data-bind="text: key"/>
-                        <input data-bind="value: value"/>
-                      </li>
-                    </ul>
+                    <div data-bind="template: { name: configTemplate, data: configData} ">
+                    </div>
                   </div>
                   <!-- /ko -->
                 </div>
 			</div>
+          </div>
+          <div class="wizard-card" data-cardname="dd">
+            <h3>Number of nodes</h3>
+			<div class="alert">
+				How many Repose instances are you putting in front of your application? (1 per app instance)
+			</div>
+            <div class="wizard-input-section">
+              <div class="control-group">
+                Enter # of repose nodes and automatically show input fields for that number.  Enter IP addresses for your nodes
+              </div>
+            </div>
+          </div>
+          <div class="wizard-card" data-cardname="test">
+            <h3>Test Drive!</h3>
+			<div class="alert">
+				Your configuration has been deployed to the following url: <url here>.  You can now test drive it and get benchmarks for your requests.
+			</div>
+            <div class="wizard-input-section">
+              <div class="control-group">
+                Simple client with options for methods, headers, and request.  Output will be request info, response info, and any other requests being made internally by Repose as well as response time.  One other options is to run a "benchmark test," which spins up apache benchmark and allows user to specify # of requests (max: 1000), concurrency (max: 100), time limit and window size.  Runs first against service directly and then via Repose.
+              </div>
+            </div>
+          </div>
+          <div class="wizard-card" data-cardname="test">
+            <h3>Download!</h3>
+			<div class="alert">
+				Congratulations!  You're done.
+			</div>
+            <div class="wizard-input-section">
+              <div class="control-group">
+                  Download your configuration <a href="#">here</a>.  If you'd like more information on setting up Repose in your system, please refer to <a href="#">here</a>.
+              </div>
+            </div>
           </div>
 		
 		
@@ -97,7 +126,23 @@
 		</div>
 							
 		<script type="text/html" id="clientAuthTemplate">
-        
+            <div>
+                <label for="auth-filter-module">Select Auth filter Module</label>
+                <select name="auth-filter-module" id="auth-filter-module" data-bind="options: auth_filter_modules, value: auth_filter_module, optionsText: 'value', optionsCaption: 'Choose...'"></select>
+            </div>
+            <div>
+                <label for="auth-filter-module">White lists</label>
+                <button type="button" data-bind="click: addWhiteListUri" id="add-white-list">Add white list regex</button>
+                <ul data-bind="foreach: white_list_uris, visible: white_list_uris().length > 0">
+                    <li>
+                        <input data-bind="value: uri" />
+                        <a href="#" data-bind="click: $parent.removeWhiteListUri">Delete</a>
+                    </li>
+                </ul>
+            </div>
+        </script>
+		<script type="text/html" id="rateLimitingTemplate">
+            <span data-bind="text: id"/>
         </script>
         <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
         <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
@@ -152,11 +197,11 @@
                             return item.id()
                         }
                     );
-                    console.log(filterstoSubmit);
                     $.getJSON("/get_data_for_filter/" + filterstoSubmit.join(","),function(details){
                       var mappedDetails = $.map(details,function(item){ return new Detail(item)});
                       self.details(mappedDetails);
                       $("#detail-accordion").accordion();
+
                     });
                 });
 
@@ -206,14 +251,45 @@
           function Detail(item){
             this.id = ko.observable(item.id);
             this.filter = ko.observable(item.filter);
-            var mappedConfigs = $.map(item.configs,function(config){ return new Config(config)});
-            this.configs = ko.observableArray(mappedConfigs);
+            this.configTemplate = item.template;
+            this.configData = null;
+            switch(item.filter){
+                case 'client-auth-n': 
+                    this.configData = new ClientAuthFilter(item);
+                    break;
+                case 'rate-limiting':
+                    this.configData = new RateLimitingFilter(item);
+                    break;
+            }
           }
           
-          function Config(item){
-            this.key = item.key;
-            this.value = ko.observable(item.value);
+          function ClientAuthFilter(item){
+            var self = this;
+            self.id = ko.observable(item.id);
+            
+            var authModules = ko.utils.arrayFirst(item.configs, function(config) { return config.key === 'auth-filter-module' });
+            self.auth_filter_module = ko.observable();
+            self.auth_filter_modules = ko.observableArray(authModules.value);
+            
+            self.white_list_uris = ko.observableArray([]);
+            self.removeWhiteListUri = function(uri){
+                self.white_list_uris.destroy(uri);
+            };
+            self.addWhiteListUri = function(){
+                console.log('value');
+                self.white_list_uris.push(new WhiteListUri('*'));
+                $('#detail-accordion').accordion('refresh');
+            };
           }
+          
+          function RateLimitingFilter(item){
+            this.id = ko.observable('rate limit');
+          }
+          
+          function WhiteListUri(value){
+            this.uri = ko.observable(value);
+          }
+
           
 function setVersion(card) {
 	var version = $("#version").val();

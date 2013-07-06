@@ -57,7 +57,8 @@ get '/get_data_for_filter/:filters' do |filters|
   details = [
     {
       'id' => '1', 
-      'filter' => 'client-auth-n', 
+      'filter' => 'client-auth-n',
+      'template' => 'clientAuthTemplate', 
       'configs' => [
           {
             'id' => '1', 
@@ -89,6 +90,7 @@ get '/get_data_for_filter/:filters' do |filters|
     {
        'id' => '2', 
        'filter' => 'rate-limiting', 
+       'template' => 'rateLimitingTemplate',
        'configs' => [
 
        ]
