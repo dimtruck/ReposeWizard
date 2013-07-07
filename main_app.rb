@@ -127,6 +127,62 @@ get '/load_config_children/:config_id' do |config_id|
   body config.to_json
 end
 
+get '/get_test_environment' do
+  content_type :json
+  guid = {'id' => '2345-2385-23859'}
+  body guid.to_json
+end
+
+post '/execute_request/:guid' do |guid|
+  # set up directory
+  response = {
+    'request_from_client' => {
+      'request_uri' => 'test',
+      'request_method' => 'GET',
+      'request_headers' => [],
+      'request_data' => ''
+    },
+    'repose_flow' => [
+      {
+        'id' => 1,
+        'type' => 'request',
+        'request_uri' => 'to_auth',
+        'request_method' => 'GET',
+        'request_headers' => [],
+        'request_data' => ''
+      },
+      {
+        'id' => 2,
+        'type' => 'response',
+        'response_headers' => [],
+        'response_data' => 'blahbalh'
+      },
+      {
+        'id' => 3,
+        'type' => 'request',
+        'request_uri' => 'to_origin',
+        'request_method' => 'GET',
+        'request_headers' => [],
+        'request_data' => ''
+      },
+      {
+        'id' => 4,
+        'type' => 'response',
+        'response_headers' => [],
+        'response_data' => 'blahbalh'
+      }
+    ],
+    'response_to_client' => {
+      'response_headers' => [],
+      'response_data' => 'blahbalh'
+    }
+  }
+
+  content_type :json
+  body response.to_json
+end
+
+
 put '/save_data_for_filter' do
   "Save data for filter"
 end

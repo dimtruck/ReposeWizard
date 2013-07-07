@@ -106,7 +106,7 @@
                         <button type="button" data-bind="click: addHeader">Add header</button>
                         <ul data-bind="foreach: headers, visible: headers().length > 0">
                             <li>
-                                <input data-bind="value: $data" />
+                                <input data-bind="value: data" />
                                 <a href="#" data-bind="click: $parent.removeHeader">Delete</a>
                             </li>
                         </ul>
@@ -133,11 +133,12 @@
                     <button type="button" data-bind="click: sendRequest">Send One Request</button>
                     <button type="button" data-bind="click: benchmark">Benchmark</button>
                 </fieldset>
+                <div data-bind="template: { name: 'responseTemplate', data: responseData} "></div>
                 Simple client with options for methods, headers, and request.  Output will be request info, response info, and any other requests being made internally by Repose as well as response time.  One other options is to run a "benchmark test," which spins up apache benchmark and allows user to specify # of requests (max: 1000), concurrency (max: 100), time limit and window size.  Runs first against service directly and then via Repose.
               </div>
             </div>
           </div>
-          <div class="wizard-card" data-cardname="test">
+          <div class="wizard-card" data-cardname="download">
             <h3>Download!</h3>
 			<div class="alert">
 				Congratulations!  You're done.
@@ -175,6 +176,23 @@
 			</div>
 		
 		</div>
+        
+        <script type="text/html" id="responseTemplate">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request</th>
+                        <th>Repose</th>
+                        <th>Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    
+                    </tr>
+                </tbody>
+            </table>
+        </script>
 							
 		<script type="text/html" id="clientAuthTemplate">
             <div>
@@ -289,6 +307,8 @@
                 self.details = ko.observableArray([]);
                 self.selected_version = ko.observable();
                 self.number_of_nodes = ko.observable();
+                self.test_environment = ko.observable();
+                self.responseData = ko.observable();
                 
                 self.dd_nodes = ko.observableArray([]);
                 
@@ -319,7 +339,7 @@
                 });
                 
                 self.addHeader = function (){
-                    self.headers.push('');
+                    self.headers.push(new Header(''));
                 };
                 
                 self.removeHeader = function(header){
@@ -327,6 +347,30 @@
                 };
                 
                 self.sendRequest = function(){
+                    if(self.selected_method() !== '' && self.request_uri() !== ''){
+                        //if post or put, add data
+                        var headersToSubmit = $.map(self.headers(), function(item){
+                                return item.data()
+                            }
+                        );
+                        var request_setup = {
+                            'method': self.selected_method(),
+                            'headers': ko.toJSON(self.headers()),
+                            'uri': self.request_uri(),
+                            'data': self.request_data()
+                        };
+                        $.ajax({
+                            url: "/execute_request/" + self.test_environment(),
+                            type: 'POST',
+                            contentType: 'json',
+                            data: ko.toJSON(request_setup),
+                            success: function(data) {
+                                //load data into responseData
+                                console.log(data);
+                            }
+                        });
+                        
+                    }
                     //send request here
                 };
                 
@@ -377,6 +421,12 @@
                       self.details(mappedDetails);
                       $("#detail-accordion").accordion({collapsible:true});
                       $('#detail-accordion').accordion('refresh');
+                    });
+                });
+                
+                wizard.cards["test"].on("selected", function(card){
+                    $.getJSON("/get_test_environment",function(uri){
+                      self.test_environment(uri.id);
                     });
                 });
 
@@ -490,6 +540,10 @@
           function ClientMapping(tenant_id, regex){
             this.tenant_id = ko.observable(tenant_id);
             this.regex = ko.observable(regex);
+          }
+          
+          function Header(value){
+            this.data = ko.observable(value);
           }
 
           
