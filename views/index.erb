@@ -28,7 +28,7 @@
           <div class="wizard-card" data-cardname="filters">
             <h3>Filters</h3>
             <div class="alert">
-                What do you want Repose to do?
+                What do you want Repose to do?  You can either build your configs from scratch or use our cookbooks.
             </div>
             <div class="wizard-input-section">
               <div id="filter-accordion">
@@ -129,6 +129,8 @@
             <div>
                 <label for="auth-filter-module">Select Auth filter Module</label>
                 <select name="auth-filter-module" id="auth-filter-module" data-bind="options: auth_filter_modules, value: auth_filter_module, optionsText: 'value', optionsCaption: 'Choose...'"></select>
+                <div data-bind="template: { name: authFilterModuleTemplate, data: authModuleData} ">
+                </div>
             </div>
             <div>
                 <label for="auth-filter-module">White lists</label>
@@ -143,6 +145,83 @@
         </script>
 		<script type="text/html" id="rateLimitingTemplate">
             <span data-bind="text: id"/>
+        </script>
+        <script type="text/html" id="basicAuthTemplate">
+            <div>
+                <label for="username">Username:<span class="caret"></span></label>
+                <input data-bind="value: username"/>
+            </div>
+            <div>
+                <label for="password">Password:<span class="caret"></span></label>
+                <input type="password" data-bind="value: password"/>
+            </div>
+        </script>
+        <script type="text/html" id="openstackAuthTemplate">
+            <fieldset>
+                <legend>Main information</legend>
+                <div>
+                    <label for="delegable">Delegable</label>
+                    <input type="checkbox" data-bind="checked: delegable"/>
+                </div>
+                <div>
+                    <label for="user_cache_timeout">user cache timeout</label>
+                    <input data-bind="value: user_cache_timeout"/>
+                </div>
+                <div>
+                    <label for="token_cache_timeout">token cache timeout</label>
+                    <input data-bind="value: token_cache_timeout"/>
+                </div>
+                <div>
+                    <label for="tenanted">Tenanted</label>
+                    <input type="checkbox" data-bind="checked: tenanted"/>
+                </div>
+                <div>
+                    <label for="request_groups">Request Groups</label>
+                    <input type="checkbox" data-bind="checked: request_groups"/>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>OpenStack Identity Service endpoint<span class="caret"></span></legend>
+                <div>
+                    <label for="username">Username:<span class="caret"></span></label>
+                    <input data-bind="value: service.username"/>
+                </div>
+                <div>
+                    <label for="password">Password:<span class="caret"></span></label>
+                    <input type="password" data-bind="value: service.password"/>
+                </div>
+                <div>
+                    <label for="uri">Uri:<span class="caret"></span></label>
+                    <input data-bind="value: service.uri"/>
+                </div>
+                <div>
+                    <label for="tenantId">Tenant Id:</label>
+                    <input data-bind="value: service.tenant_id"/>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>Include endpoints in headers</legend>
+                <div>
+                    <input type="checkbox" data-bind="checked: header.isSelected" />
+                    <span>Check to include endpoints in headers</span>
+                </div>
+                <div>
+                    <label for="format">Endpoint header format:</label>
+                    <select name="format" data-bind="options: header.format_enumerations, value: header.format"></select>
+                </div>
+                <div>
+                    <label for="cache-timeout">Cache timeout in ms:</label>
+                    <input data-bind="value: header.cache_timeout"/>
+                </div>
+            </fieldset>
+            <button type="button" data-bind="click: $parent.addClientMapping" data='client_mappings'>Add target URI for auth requests</button>
+            <ul data-bind="foreach: $parent.client_mappings">
+                <li>
+                    <input data-bind="value: tenant_id" placeholder="The tenantId with admin permission used by the Keystone implementation perform admin tasks." />
+                    <input data-bind="value: regex" placeholder="Regex used to extract the client id from a given URI." />
+                    <a href="#" data-bind="click: $parents[1].removeClientMapping">Delete</a>
+                </li>
+            </ul>
         </script>
         <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
         <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
@@ -160,7 +239,7 @@
                 self.selected_version = ko.observable();
 
                 //$.fn.wizard.logging = true;
-                var wizard = $("#repose-wizard").wizard();
+                var wizard = $("#repose-wizard").wizard({width:1000, increaseHeight: 100});
                 $(".chzn-select").chosen();
                 wizard.el.find(".wizard-ns-select").change(function() {
                     wizard.el.find(".wizard-ns-detail").show();
@@ -183,7 +262,7 @@
                     $.getJSON("/get_filters/" + self.selected_version(),function(filters){
                       var mappedFilters = $.map(filters,function(item){ return new Filter(item)});
                       self.filters(mappedFilters);
-                      $("#filter-accordion").accordion();
+                      $("#filter-accordion").accordion({collapsible:true});
                       $('#filter-accordion input[type="checkbox"]').click(function(e) {
                         e.stopPropagation();
                       });
@@ -200,8 +279,8 @@
                     $.getJSON("/get_data_for_filter/" + filterstoSubmit.join(","),function(details){
                       var mappedDetails = $.map(details,function(item){ return new Detail(item)});
                       self.details(mappedDetails);
-                      $("#detail-accordion").accordion();
-
+                      $("#detail-accordion").accordion({collapsible:true});
+                      $('#detail-accordion').accordion('refresh');
                     });
                 });
 
@@ -270,13 +349,34 @@
             var authModules = ko.utils.arrayFirst(item.configs, function(config) { return config.key === 'auth-filter-module' });
             self.auth_filter_module = ko.observable();
             self.auth_filter_modules = ko.observableArray(authModules.value);
+            self.authFilterModuleTemplate = '';
+            self.authModuleData = ko.observable();
             
+            
+            self.client_mappings = ko.observableArray([]);
+
+            self.addClientMapping = function(el){
+                self.client_mappings.push(new ClientMapping('',''));
+                $('#detail-accordion').accordion('refresh');
+            };
+            self.removeClientMapping = function(client_mapping){
+                self.client_mappings.destroy(client_mapping);
+            };
+            
+            //on auth_filter_module selection, load another template for that 
+            self.auth_filter_module.subscribe(function(item){
+                $.getJSON(item.action,function(detail){
+                    self.authFilterModuleTemplate = detail.template;
+                    self.authModuleData(detail.detail);
+                    $('#detail-accordion').accordion('refresh');
+                });
+            });
+
             self.white_list_uris = ko.observableArray([]);
             self.removeWhiteListUri = function(uri){
                 self.white_list_uris.destroy(uri);
             };
             self.addWhiteListUri = function(){
-                console.log('value');
                 self.white_list_uris.push(new WhiteListUri('*'));
                 $('#detail-accordion').accordion('refresh');
             };
@@ -288,6 +388,11 @@
           
           function WhiteListUri(value){
             this.uri = ko.observable(value);
+          }
+          
+          function ClientMapping(tenant_id, regex){
+            this.tenant_id = ko.observable(tenant_id);
+            this.regex = ko.observable(regex);
           }
 
           

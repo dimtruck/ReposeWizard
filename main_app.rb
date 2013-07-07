@@ -23,19 +23,10 @@ get '/' do
   erb :index
 end
 
-get '/load_step' do
-  step = Step.new(params[:step_number])
-  body step.render
-end
-
 get '/get_versions' do
   content_type :json
   model = Models::Version.new
   body model.get_versions_available_for_new_build.to_json  
-end
-
-post '/set_version' do
-  "Sets version for this session"
 end
 
 get '/get_filters/:version' do |version|
@@ -45,10 +36,6 @@ get '/get_filters/:version' do |version|
     {'id'=>'2', 'english'=>'Authenticate my app with a 3rd party Auth provider','filter_list'=>'client-auth','description'=>'Repose will authenticate every matching request against a third party authentication provider prior to allowing requests come into your application'}
   ]
   body filters.to_json
-end
-
-post '/add_filter' do
-  "Add filter for this session"
 end
 
 get '/get_data_for_filter/:filters' do |filters|
@@ -97,6 +84,47 @@ get '/get_data_for_filter/:filters' do |filters|
     }
   ]
   body details.to_json
+end
+
+get '/load_config_children/:config_id' do |config_id|
+  if config_id === '2' then
+    config = {
+      'template' => 'basicAuthTemplate',
+      'detail' => 
+       {
+        'username' => '',
+        'password' => '' 
+      }
+    } 
+  elsif config_id === '3' then
+    config = {
+      'template' => 'openstackAuthTemplate',
+      'detail' => 
+       {
+         'service' => {
+           'username' => '',
+           'password' => '',
+           'uri' => '',
+           'tenant_id' => ''
+         },
+         'header' => {
+           'isSelected' => false,
+           'format' => 'JSON',
+           'cache-timeout' => '600000',
+           'format_enumerations' => ['JSON','XML']
+         },
+         'client_mappings' => [],
+         'delegable' => false,
+         'user_cache_timeout' => '60000',
+         'token_cache_timeout' => '600000',
+         'tenanted' => true,
+         'request_groups' => true
+      }
+    } 
+  end
+
+  content_type :json
+  body config.to_json
 end
 
 put '/save_data_for_filter' do
