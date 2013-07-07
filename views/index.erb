@@ -25,6 +25,14 @@
               </div>
             </div>
           </div>
+          <div class="wizard-card" data-cardname="basic">
+            <h3>Basic setup</h3>
+            <div class="wizard-input-section">
+              <div class="control-group">
+                Enter random information that corresponds to system-model, container, and log4j settings
+              </div>
+            </div>
+          </div>
           <div class="wizard-card" data-cardname="filters">
             <h3>Filters</h3>
             <div class="alert">
@@ -71,7 +79,12 @@
 			</div>
             <div class="wizard-input-section">
               <div class="control-group">
-                Enter # of repose nodes and automatically show input fields for that number.  Enter IP addresses for your nodes
+                <label for="number-of-nodes">Number of nodes:</label>
+                <input data-bind="value: number_of_nodes"/>
+                <!-- ko foreach: dd_nodes -->
+                    <label for="dd_ip">Enter ip for your node</label>
+                    <input data-bind="value: $data"/>
+                <!-- /ko -->
               </div>
             </div>
           </div>
@@ -82,6 +95,44 @@
 			</div>
             <div class="wizard-input-section">
               <div class="control-group">
+                <fieldset>
+                    <legend>Request setup</legend>
+                    <div>
+                        <label for="method">Select your method</label>
+                        <select name="method" data-bind="options: methods, value: selected_method"></select>
+                    </div>
+                    <div>
+                        <label for="headers">Headers:</label>
+                        <button type="button" data-bind="click: addHeader">Add header</button>
+                        <ul data-bind="foreach: headers, visible: headers().length > 0">
+                            <li>
+                                <input data-bind="value: $data" />
+                                <a href="#" data-bind="click: $parent.removeHeader">Delete</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label for="request_uri">Request URI</label>
+                        <input data-bind="value: request_uri"/>
+                    </div>
+                    <div data-bind="visible: isMethodForData">
+                        <label for="request_data">Request Data</label>
+                        <textarea data-bind="value: request_data"></textarea>
+                    </div>
+                    <div>
+                        <h3>Benchmark data (optional for benchmarking)</h3>
+                        <label for="number_of_requests">Number of requests:</label>
+                        <input data-bind="value: number_of_requests"/><br/>
+                        <label for="number_of_concurrent">Number of concurrent requests:</label>
+                        <input data-bind="value: number_of_concurrent"/>
+                        <label for="time_limit">Time Limit:</label>
+                        <input data-bind="value: time_limit"/>
+                        <label for="window_size">TCP window size:</label>
+                        <input data-bind="value: window_size"/>
+                    </div>
+                    <button type="button" data-bind="click: sendRequest">Send One Request</button>
+                    <button type="button" data-bind="click: benchmark">Benchmark</button>
+                </fieldset>
                 Simple client with options for methods, headers, and request.  Output will be request info, response info, and any other requests being made internally by Repose as well as response time.  One other options is to run a "benchmark test," which spins up apache benchmark and allows user to specify # of requests (max: 1000), concurrency (max: 100), time limit and window size.  Runs first against service directly and then via Repose.
               </div>
             </div>
@@ -237,7 +288,52 @@
                 self.filters = ko.observableArray([]);
                 self.details = ko.observableArray([]);
                 self.selected_version = ko.observable();
-
+                self.number_of_nodes = ko.observable();
+                
+                self.dd_nodes = ko.observableArray([]);
+                
+                self.number_of_nodes.subscribe(function(item){
+                    self.dd_nodes.removeAll();
+                    for(var i = 0, max = item; i < item; i ++){
+                        self.dd_nodes.push("127.0.0.1");
+                    }
+                });
+                
+                self.methods = ko.observableArray(['GET','PUT','POST','DELETE','HEAD']);
+                self.selected_method = ko.observable();
+                self.headers = ko.observableArray([]);
+                self.request_uri = ko.observable();
+                self.request_data = ko.observable();
+                self.isMethodForData = ko.observable(false);
+                self.number_of_requests = ko.observable(1000);
+                self.number_of_concurrent = ko.observable(100);
+                self.time_limit = ko.observable(60);
+                self.window_size = ko.observable(256);
+                
+                self.selected_method.subscribe(function(item){
+                    if(item === 'PUT' || item === 'POST'){
+                        self.isMethodForData(true);
+                    }else{
+                        self.isMethodForData(false);
+                    }
+                });
+                
+                self.addHeader = function (){
+                    self.headers.push('');
+                };
+                
+                self.removeHeader = function(header){
+                    self.headers.destroy(header);
+                };
+                
+                self.sendRequest = function(){
+                    //send request here
+                };
+                
+                self.benchmark = function(){
+                    //send benchmark here
+                };
+                
                 //$.fn.wizard.logging = true;
                 var wizard = $("#repose-wizard").wizard({width:1000, increaseHeight: 100});
                 $(".chzn-select").chosen();
@@ -287,6 +383,7 @@
 
                 wizard.on("submit", function(wizard) {
                     var submit = {};
+                    console.log(wizard.serialize());
 
                     setTimeout(function() {
                         wizard.trigger("success");
