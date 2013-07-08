@@ -29,6 +29,55 @@ get '/get_versions' do
   body model.get_versions_available_for_new_build.to_json  
 end
 
+get '/get_basic_info/:version' do |version|
+  basic_info = {
+   'container' => {
+     'via' => '',
+     'content_body_read_limit' => '',
+     'connection_timeout' => '30000',
+     'read_timeout' => '30000',
+     'proxy_thread_pool' => '20',
+     'client_request_logging' => false,
+     'jmx_reset_time' => '15',
+     'deployment_directory' => {
+       'value' => '',
+       'auto_clean' => true
+     },
+     'artifact_directory' => {
+       'value' => '',
+       'check_interval' => '1000'
+     },
+     'logging_directory' => {
+       'href' => ''
+     },
+     'ssl_directory' => {
+       'keystore_filename' => '',
+       'keystore_password' => '',
+       'key_password' => ''
+     }
+   },
+   'system_model' => {
+     'repose_clusters' => [
+
+     ],
+     'service_clusters' => [
+
+     ]
+   },
+   'logger' => {
+     'level' => 'WARN',
+     'jetty_level' => 'OFF',
+     'file' => '/var/log/repose/current.log',
+     'file_max' => '20mb',
+     'file_max_backup' => '5',
+     'pattern' => '%d %-4r [%t] %-5p %c %x - %m%n'
+   }
+  }
+
+  content_type :json
+  body basic_info.to_json
+end
+
 get '/get_filters/:version' do |version|
   content_type :json
   filters = [
@@ -137,34 +186,34 @@ post '/execute_request/:guid' do |guid|
   # set up directory
   response = {
     'request_from_client' => {
-      'request_uri' => 'test',
+      'request_uri' => 'http://10.23.246.101/test',
       'request_method' => 'GET',
-      'request_headers' => [],
+      'request_headers' => [{'data' => 'accept:application/json'}],
       'request_data' => ''
     },
     'repose_flow' => [
       {
         'id' => 1,
         'type' => 'request',
-        'request_uri' => 'to_auth',
-        'request_method' => 'GET',
+        'request_uri' => 'http://internal.identity.service.com/v2.0/tokens',
+        'request_method' => 'POST',
         'request_headers' => [],
-        'request_data' => ''
+        'request_data' => '{userid:"test",password:"test"}'
       },
       {
         'id' => 2,
         'type' => 'response',
         'response_time' => 53,
         'response_headers' => [],
-        'response_data' => 'blahbalh'
+        'response_data' => '{x-auth-token: xad-23kd-23gs-sdkg}'
       },
       {
         'id' => 3,
         'type' => 'request',
-        'request_uri' => 'to_origin',
+        'request_uri' => 'http://10.23.246.101:1001',
         'request_method' => 'GET',
-        'request_headers' => [],
-        'request_data' => ''
+        'request_headers' => [{'data' => 'x-auth-token : xad-23kd-23gs-sdkg'}],
+        'request_data' => 'my request'
       },
       {
         'id' => 4,

@@ -10,6 +10,17 @@
         margin: 0 0 10px;
         padding: 0;
       }
+      
+      .repose-wizard-entry label {
+        display: inline;
+        min-width: 250px;
+        font-weight: 900;
+        float: left;
+      }
+      
+      .repose-wizard-entry{
+        clear: both;
+      }
     </style>
   </head>
   <body style="padding:30px;">
@@ -28,8 +39,8 @@
           <div class="wizard-card" data-cardname="basic">
             <h3>Basic setup</h3>
             <div class="wizard-input-section">
-              <div class="control-group">
-                Enter random information that corresponds to system-model, container, and log4j settings
+              <div class="control-group" data-bind="with: basicData">
+                <div data-bind="template: { name: basicTemplate, data: data} "></div>
               </div>
             </div>
           </div>
@@ -65,28 +76,11 @@
                   <!-- ko foreach: details -->
                   <h3 data-bind="text: filter"></h3>
                   <div>
-                    <div data-bind="template: { name: configTemplate, data: configData} ">
-                    </div>
+                    <div data-bind="template: { name: configTemplate, data: configData} "></div>
                   </div>
                   <!-- /ko -->
                 </div>
 			</div>
-          </div>
-          <div class="wizard-card" data-cardname="dd">
-            <h3>Number of nodes</h3>
-			<div class="alert">
-				How many Repose instances are you putting in front of your application? (1 per app instance)
-			</div>
-            <div class="wizard-input-section">
-              <div class="control-group">
-                <label for="number-of-nodes">Number of nodes:</label>
-                <input data-bind="value: number_of_nodes"/>
-                <!-- ko foreach: dd_nodes -->
-                    <label for="dd_ip">Enter ip for your node</label>
-                    <input data-bind="value: $data"/>
-                <!-- /ko -->
-              </div>
-            </div>
           </div>
           <div class="wizard-card" data-cardname="test">
             <h3>Test Drive!</h3>
@@ -97,11 +91,11 @@
               <div class="control-group">
                 <fieldset>
                     <legend>Request setup</legend>
-                    <div>
+                    <div class="repose-wizard-entry">
                         <label for="method">Select your method</label>
                         <select name="method" data-bind="options: methods, value: selected_method"></select>
                     </div>
-                    <div>
+                    <div class="repose-wizard-entry">
                         <label for="headers">Headers:</label>
                         <button type="button" data-bind="click: addHeader">Add header</button>
                         <ul data-bind="foreach: headers, visible: headers().length > 0">
@@ -111,11 +105,11 @@
                             </li>
                         </ul>
                     </div>
-                    <div>
+                    <div class="repose-wizard-entry">
                         <label for="request_uri">Request URI</label>
                         <input data-bind="value: request_uri"/>
                     </div>
-                    <div data-bind="visible: isMethodForData">
+                    <div class="repose-wizard-entry" data-bind="visible: isMethodForData">
                         <label for="request_data">Request Data</label>
                         <textarea data-bind="value: request_data"></textarea>
                     </div>
@@ -123,17 +117,25 @@
                     <div data-bind="template: { name: 'responseTemplate', data: responseData} "></div>
                     <div>
                         <h3>Benchmark data (optional for benchmarking)</h3>
-                        <label for="number_of_requests">Number of requests:</label>
-                        <input data-bind="value: number_of_requests"/><br/>
-                        <label for="number_of_concurrent">Number of concurrent requests:</label>
-                        <input data-bind="value: number_of_concurrent"/>
-                        <label for="time_limit">Time Limit:</label>
-                        <input data-bind="value: time_limit"/>
-                        <label for="window_size">TCP window size:</label>
-                        <input data-bind="value: window_size"/>
+                        <div class="repose-wizard-entry">
+                            <label for="number_of_requests">Number of requests:</label>
+                            <input data-bind="value: number_of_requests"/><br/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="number_of_concurrent">Number of concurrent requests:</label>
+                            <input data-bind="value: number_of_concurrent"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="time_limit">Time Limit:</label>
+                            <input data-bind="value: time_limit"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="window_size">TCP window size:</label>
+                            <input data-bind="value: window_size"/>
+                        </div>
+                        <button type="button" data-bind="click: benchmark">Benchmark</button>
+                        <div data-bind="template: { name: 'benchmarkTemplate', data: benchmarkData} "></div>
                     </div>
-                    <button type="button" data-bind="click: benchmark">Benchmark</button>
-                    <div data-bind="template: { name: 'benchmarkTemplate', data: benchmarkData} "></div>
                 </fieldset>
                 Simple client with options for methods, headers, and request.  Output will be request info, response info, and any other requests being made internally by Repose as well as response time.  One other options is to run a "benchmark test," which spins up apache benchmark and allows user to specify # of requests (max: 1000), concurrency (max: 100), time limit and window size.  Runs first against service directly and then via Repose.
               </div>
@@ -178,8 +180,249 @@
 		
 		</div>
         
+        <script type="text/html" id="basicTemplate">
+            <fieldset data-bind="with: container">
+                <legend>Container</legend>
+                <div class="repose-wizard-entry">
+                    <label for="container-via">via header:</label>
+                    <input data-bind="value: via"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-content-body-read-limit">Content body read limit:</label>
+                    <input data-bind="value: content_body_read_limit"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-connection-timeout">Connection timeout to origin (ms):</label>
+                    <input data-bind="value: connection_timeout"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-read-timeout">Read timeout from origin (ms):</label>
+                    <input data-bind="value: read_timeout"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-proxy-thread-pool">Thread pool:</label>
+                    <input data-bind="value: proxy_thread_pool"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-client-request-logging">Log traffic between repose & origin:</label>
+                    <input data-bind="value: client_request_logging"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-jmx-reset-time">How long JMX keeps data (s):</label>
+                    <input data-bind="value: jmx_reset_time"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="container-logging-directory-href">Logging Directory href:</label>
+                    <input data-bind="value: logging_directory.href"/>
+                </div>
+                <fieldset data-bind="with: deployment_directory">
+                    <legend>Deployment directory</legend>
+                    <div class="repose-wizard-entry">
+                        <label for="container-deployment-directory-value">deployment directory:</label>
+                        <input data-bind="value: value"/>
+                    </div>
+                    <div class="repose-wizard-entry">
+                        <label for="container-deployment-directory-auto-clean">Auto clean:</label>
+                        <input type="checkbox" data-bind="checked: auto_clean"/>
+                    </div>
+                </fieldset>
+                <fieldset data-bind="with: artifact_directory">
+                    <legend>Artifact directory</legend>
+                    <div class="repose-wizard-entry">
+                        <label for="container-artifact-directory-value">artifact directory:</label>
+                        <input data-bind="value: value"/>
+                    </div>
+                    <div class="repose-wizard-entry">
+                        <label for="container-artifact-directory-check-interval">Check interval:</label>
+                        <input data-bind="value: check_interval"/>
+                    </div>
+                </fieldset>
+                <fieldset data-bind="with: ssl_directory">
+                    <legend>SSL directory</legend>
+                    <div class="repose-wizard-entry">
+                        <label for="container-artifact-directory-keystore-filename">Name of the app keystore file:</label>
+                        <input data-bind="value: keystore_filename"/>
+                    </div>
+                    <div class="repose-wizard-entry">
+                        <label for="container-artifact-directory-keystore-password">Password for entire app keystore:</label>
+                        <input data-bind="value: keystore_password"/>
+                    </div>
+                    <div class="repose-wizard-entry">
+                        <label for="container-ssl-directory-key-password">Password for an app key in the keystore:</label>
+                        <input data-bind="value: key_password"/>
+                    </div>
+                </fieldset>
+            </fieldset>
+            
+            <fieldset data-bind="with: system_model">
+                <legend>System model</legend>
+                <button type="button" data-bind="click: $parents[1].addReposeCluster" id="add-repose-cluster">Add Repose Cluster</button>
+                <div data-bind="foreach: repose_clusters">
+                    <div class="repose-wizard-entry">
+                        <label for="system-model-repose-cluster-id">Cluster id:</label>
+                        <input data-bind="value: id"/>
+                    </div>
+                    <button type="button" data-bind="click: addReposeClusterNode">Add Node</button>
+                    <div data-bind="foreach: nodes">
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-node-id">node id:</label>
+                            <input data-bind="value: id"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-node-hostname">node hostname:</label>
+                            <input data-bind="value: hostname"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-node-http-port">node http port:</label>
+                            <input data-bind="value: http_port"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-node-https-port">node https port:</label>
+                            <input data-bind="value: https_port"/>
+                        </div>
+                    </div>
+                    <button type="button" data-bind="click: addReposeClusterFilter">Add Filter</button>
+                    <div data-bind="foreach: filters">
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-filter-id">filter id:</label>
+                            <input data-bind="value: id"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-filter-name">filter name:</label>
+                            <input data-bind="value: name"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-filter-configuration">node configuration:</label>
+                            <input data-bind="value: configuration"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-filter-https-port">node uri:</label>
+                            <input data-bind="value: uri"/>
+                        </div>
+                    </div>
+                    <button type="button" data-bind="click: addReposeClusterService">Add Service</button>
+                    <div data-bind="foreach: services">
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-repose-cluster-service-name">service name:</label>
+                            <input data-bind="value: name"/>
+                        </div>
+                    </div>
+                    <button type="button" data-bind="click: addReposeClusterDestination">Add Destination</button>
+                    <div data-bind="foreach: destinations">
+                        <button type="button" data-bind="click: addReposeClusterDestinationEndpoint">Add Destination Endpoint</button>
+                        <div data-bind="foreach: endpoints">
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-id">Destination endpoint id:</label>
+                                <input data-bind="value: id"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-protocol">Destination endpoint protocol:</label>
+                                <input data-bind="value: protocol"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-route-path">Destination endpoint route path:</label>
+                                <input data-bind="value: route_path"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-default">Default:</label>
+                                <input type="checkbox" data-bind="checked: is_default"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-hostname">Destination endpoint hostname:</label>
+                                <input data-bind="value: hostname"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-endpoint-port">Destination endpoint port:</label>
+                                <input data-bind="value: port"/>
+                            </div>
+                        </div>
+                        <button type="button" data-bind="click: addReposeClusterDestinationCluster">Add Destination Cluster</button>
+                        <div data-bind="foreach: clusters">
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-cluster-id">Destination cluster id:</label>
+                                <input data-bind="value: id"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-cluster-protocol">Destination cluster protocol:</label>
+                                <input data-bind="value: protocol"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-cluster-route-path">Destination cluster route path:</label>
+                                <input data-bind="value: route_path"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-cluster-default">Default:</label>
+                                <input type="checkbox" data-bind="checked: is_default"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="system-model-repose-cluster-destination-cluster">Destination cluster:</label>
+                                <input data-bind="value: hostname"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="repose-wizard-entry">
+                        <label for="system-model-repose-cluster-rewrite-host-header">Rewrite host header:</label>
+                        <input type="checkbox" data-bind="checked: rewrite_host_header"/>
+                    </div>
+                </div>
+                <button type="button" data-bind="click: $parents[1].addServiceCluster" id="add-service-cluster">Add Service Cluster</button>
+                <div data-bind="foreach: service_clusters">
+                    <div class="repose-wizard-entry">
+                        <label for="system-model-service-cluster-id">Cluster id:</label>
+                        <input data-bind="value: id"/>
+                    </div>
+                    <button type="button" data-bind="click: addServiceClusterNode">Add Node</button>
+                    <div data-bind="foreach: nodes">
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-service-cluster-node-id">node id:</label>
+                            <input data-bind="value: id"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-service-cluster-node-hostname">node hostname:</label>
+                            <input data-bind="value: hostname"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-service-cluster-node-http-port">node http port:</label>
+                            <input data-bind="value: http_port"/>
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="system-model-service-cluster-node-https-port">node https port:</label>
+                            <input data-bind="value: https_port"/>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset data-bind="with: logger">
+                <legend>Logging</legend>
+                <div class="repose-wizard-entry">
+                    <label for="logger-level">Level:</label>
+                    <input data-bind="value: level"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="logger-jetty">Jetty logging:</label>
+                    <input data-bind="value: jetty_level"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="logger-file">File:</label>
+                    <input data-bind="value: file"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="logger-file-max">Max file size:</label>
+                    <input data-bind="value: file_max"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="logger-file-max-backup">Number of files to backup:</label>
+                    <input data-bind="value: file_max_backup"/>
+                </div>
+                <div class="repose-wizard-entry">
+                    <label for="logger-pattern">Pattern:</label>
+                    <input data-bind="value: pattern"/>
+                </div>
+            </fieldset>
+        </script>
+        
         <script type="text/html" id="benchmarkTemplate">
-            <div id="benchmarkTabs" data-bind="with: responseData">
+            <div id="benchmarkTabs" data-bind="with: benchmarkData">
                 <ul>
                     <li><a href="#direct-tab">Directly to Origin</a></li>
                     <li><a href="#via-repose-tab">Through Repose</a></li>
@@ -211,51 +454,81 @@
                     <li><a href="#response-tab">Response</a></li>
                 </ul>
                 <div id="request-tab">
-                    <p>
+                    <p class="entry-wrapper" >
+                        <div class="repose-wizard-entry">
                             <label for="request_uri">Request URI</label><span data-bind="text: request_from_client.request_uri"/>
+                        </div>
+                        <div class="repose-wizard-entry">
                             <label for="request_method">Request Method</label><span data-bind="text: request_from_client.request_method"/>
+                        </div>
+                        <div class="repose-wizard-entry">
                             <label for="request_headers">Request Headers</label>
                             <ul data-bind="foreach: request_from_client.request_headers">
                                 <li data-bind="text: data"/>
                             </ul>
-                            <label for="request_data">Request Data</label><span data-bind="text: request_from_client.request_data"/>                                                        
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="request_data">Request Data</label><span data-bind="text: request_from_client.request_data"/>
+                        </div>
                     </p>
                 </div>
                 <div id="repose-tab">
                     <!-- ko foreach: repose_flow -->
                     <div>
                         <!-- ko if: type==='request' -->
-                            <label for="step">Step:</label>
-                            <span data-bind="text: id"/>
-                            <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
-                            <label for="request_method">Request Method</label><span data-bind="text: request_method"/>
-                            <label for="request_headers">Request Headers</label>
-                            <ul data-bind="foreach: request_headers">
-                                <li data-bind="text: data"/>
-                            </ul>
-                            <label for="request_data">Request Data</label><span data-bind="text: request_data"/>                                                        
+                        <fieldset>
+                            <legend data-bind="text: id"/></legend>
+                            <div class="repose-wizard-entry">
+                                <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="request_method">Request Method</label><span data-bind="text: request_method"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="request_headers">Request Headers</label>
+                                <ul data-bind="foreach: request_headers">
+                                    <li data-bind="text: data"/>
+                                </ul>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="request_data">Request Data</label><span data-bind="text: request_data"/>
+                            </div>
+                        </fieldset>
                         <!-- /ko -->
                         <!-- ko if: type==='response' -->
-                            <label for="step">Step:</label>
-                            <span data-bind="text: id"></span>
-                            <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
-                            <label for="response_headers">Response Headers</label>
-                            <ul data-bind="foreach: response_headers">
-                                <li data-bind="text: data"/>
-                            </ul>
-                            <label for="response_data">Response Data</label><span data-bind="text: response_data"/>                                                        
+                        <fieldset>
+                            <legend data-bind="text: id"/></legend>
+                            <div class="repose-wizard-entry">
+                                <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="response_headers">Response Headers</label>
+                                <ul data-bind="foreach: response_headers">
+                                    <li data-bind="text: data"/>
+                                </ul>
+                            </div>
+                            <div class="repose-wizard-entry">
+                                <label for="response_data">Response Data</label><span data-bind="text: response_data"/>
+                            </div>
+                        </fieldset>
                         <!-- /ko -->
                     </div>
                     <!-- /ko -->
                 </div>
                 <div id="response-tab">
                     <p>
+                        <div class="repose-wizard-entry">
                             <label for="response_time">Response Time</label><span data-bind="text: response_to_client.response_time"/>
+                        </div>
+                        <div class="repose-wizard-entry">
                             <label for="response_headers">Response Headers</label>
                             <ul data-bind="foreach: response_to_client.response_headers">
                                 <li data-bind="text: data"/>
                             </ul>
-                            <label for="response_data">Response Data</label><span data-bind="text: response_to_client.response_data"/>                                                        
+                        </div>
+                        <div class="repose-wizard-entry">
+                            <label for="response_data">Response Data</label><span data-bind="text: response_to_client.response_data"/>
+                        </div>
                     </p>
                 </div>
             </div>
@@ -369,6 +642,7 @@
           $(function() {
             function WizardModel(){
                 var self = this;
+                self.basicData = ko.observable();
                 self.versions = ko.observableArray([]);
                 self.filters = ko.observableArray([]);
                 self.details = ko.observableArray([]);
@@ -376,17 +650,8 @@
                 self.number_of_nodes = ko.observable();
                 self.test_environment = ko.observable();
                 self.responseData = ko.observable(new Response(''));
-                self.benchmarkData = ko.observable();
-                
-                self.dd_nodes = ko.observableArray([]);
-                
-                self.number_of_nodes.subscribe(function(item){
-                    self.dd_nodes.removeAll();
-                    for(var i = 0, max = item; i < item; i ++){
-                        self.dd_nodes.push("127.0.0.1");
-                    }
-                });
-                
+                self.benchmarkData = ko.observable(new Benchmark(''));
+
                 self.methods = ko.observableArray(['GET','PUT','POST','DELETE','HEAD']);
                 self.selected_method = ko.observable();
                 self.headers = ko.observableArray([]);
@@ -413,6 +678,7 @@
                 self.removeHeader = function(header){
                     self.headers.destroy(header);
                 };
+
                 
                 self.sendRequest = function(){
                     if(self.selected_method() !== '' && self.request_uri() !== ''){
@@ -449,7 +715,8 @@
                     //send benchmark here
                     $('#benchmarkTabs').tabs();
                 };
-                
+
+
                 //$.fn.wizard.logging = true;
                 var wizard = $("#repose-wizard").wizard({width:1000, increaseHeight: 100});
                 $(".chzn-select").chosen();
@@ -467,6 +734,13 @@
                     $.getJSON("/get_versions",function(versions){
                       self.versions(versions);
                     });
+                });
+                
+                wizard.cards["basic"].on("loaded", function(card){
+                    $.getJSON("/get_basic_info/" + self.selected_version(),function(basic){
+                      self.basicData(new BasicData(basic));
+
+                    });                    
                 });
 
                 wizard.cards["filters"].on("reload", function(card){
@@ -537,11 +811,127 @@
           
             ko.applyBindings(new WizardModel());
           });
-          
+
+          function BasicData(basic){
+            var self = this;
+            self.basicTemplate = 'basicTemplate';
+            var container = new Container(basic.container);
+            var system_model = new SystemModel(basic.system_model);
+            var logger = new Logger(basic.logger);
+
+            self.data = ko.observable({'container': container.data,'system_model':system_model.data, 'logger':logger.data});
+                this.addReposeCluster = function(){
+                    self.data().system_model().repose_clusters.push(new ReposeCluster());
+                };
+            
+                this.addServiceCluster = function(){
+                    self.data().system_model().service_clusters.push(new ServiceCluster());
+                };
+          }
+
+          function Container(data){
+            this.data = ko.observable(data);
+
+          }
+
+          function SystemModel(data){
+              var repose_clusters = ko.observableArray(data.repose_clusters);
+              var service_clusters = ko.observableArray(data.service_clusters);
+              this.data = ko.observable({'repose_clusters':repose_clusters, 'service_clusters': service_clusters});
+          }
+
+          function Logger(data){
+            this.data = ko.observable(data);
+          }
+
+          function ReposeCluster(){
+              var self = this;
+              self.id = ko.observable();
+              self.rewrite_host_header = ko.observable(false);
+              self.nodes = ko.observableArray([]);
+              self.filters = ko.observableArray([]);
+              self.services = ko.observableArray([]);
+              self.destinations = ko.observableArray([]);
+              
+              self.addReposeClusterNode = function(){
+                  self.nodes.push(new ClusterNode());
+              };
+              this.addReposeClusterService = function(){
+                  self.services.push(new ClusterService());
+              };
+              this.addReposeClusterFilter = function(){
+                  self.filters.push(new ClusterFilter());
+              };
+              this.addReposeClusterDestination = function(){
+                  self.destinations.push(new ClusterDestination());
+              };
+          }
+            
+            function ClusterNode(){
+                this.id = ko.observable();
+                this.hostname = ko.observable();
+                this.http_port = ko.observable();
+                this.https_port = ko.observable();
+            }
+            
+            function ClusterFilter(){
+                this.id = ko.observable();
+                this.name = ko.observable();
+                this.configuration = ko.observable();
+                this.uri = ko.observable();
+            }
+            
+            function ClusterDestination(){
+                var self = this;
+                self.endpoints = ko.observableArray();
+                self.clusters = ko.observableArray();
+                this.addReposeClusterDestinationEndpoint = function(){
+                    self.endpoints.push(new ClusterDestinationEndpoint());
+                };
+                
+                this.addReposeClusterDestinationCluster = function(){
+                    self.clusters.push(new ClusterDestinationCluster());
+                };
+            }
+            
+            function ClusterDestinationEndpoint(){
+                this.id = ko.observable();
+                this.protocol = ko.observable();
+                this.route_path = ko.observable();
+                this.is_default = ko.observable();
+                this.hostname = ko.observable();
+                this.port = ko.observable();
+            }
+            
+            function ClusterDestinationCluster(){
+                this.id = ko.observable();
+                this.protocol = ko.observable();
+                this.route_path = ko.observable();
+                this.is_default = ko.observable();
+                this.hostname = ko.observable();
+            }
+
+            function ClusterService(){
+                this.name = ko.observable();
+            }
+
+          function ServiceCluster(data){
+              var self = this;
+              self.id = ko.observable();
+              self.nodes = ko.observableArray([]);
+              self.addServiceClusterNode = function(){
+                  self.nodes.push(new ClusterNode());
+              };
+          }
+
           function Response(response){
             this.responseData = ko.observable(response);
           }
           
+          function Benchmark(benchmark){
+            this.benchmarkData = ko.observable(benchmark);
+          }
+            
           function Filter(item){
             this.id = ko.observable(item.id);
             this.english = ko.observable(item.english);
