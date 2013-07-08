@@ -154,6 +154,7 @@ post '/execute_request/:guid' do |guid|
       {
         'id' => 2,
         'type' => 'response',
+        'response_time' => 53,
         'response_headers' => [],
         'response_data' => 'blahbalh'
       },
@@ -168,11 +169,13 @@ post '/execute_request/:guid' do |guid|
       {
         'id' => 4,
         'type' => 'response',
+        'response_time' => 63,
         'response_headers' => [],
         'response_data' => 'blahbalh'
       }
     ],
     'response_to_client' => {
+      'response_time' => 563,
       'response_headers' => [],
       'response_data' => 'blahbalh'
     }

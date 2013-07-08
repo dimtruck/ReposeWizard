@@ -119,6 +119,7 @@
                         <label for="request_data">Request Data</label>
                         <textarea data-bind="value: request_data"></textarea>
                     </div>
+                    <button type="button" data-bind="click: sendRequest">Send One Request</button>
                     <div>
                         <h3>Benchmark data (optional for benchmarking)</h3>
                         <label for="number_of_requests">Number of requests:</label>
@@ -130,7 +131,6 @@
                         <label for="window_size">TCP window size:</label>
                         <input data-bind="value: window_size"/>
                     </div>
-                    <button type="button" data-bind="click: sendRequest">Send One Request</button>
                     <button type="button" data-bind="click: benchmark">Benchmark</button>
                 </fieldset>
                 <div data-bind="template: { name: 'responseTemplate', data: responseData} "></div>
@@ -178,7 +178,7 @@
 		</div>
         
         <script type="text/html" id="responseTemplate">
-            <table>
+            <table data-bind="with: responseData">
                 <thead>
                     <tr>
                         <th>Request</th>
@@ -187,8 +187,51 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr data-bind="attr: { rowspan: repose_flow.length }, with: request_from_client">
+                        <td>
+                            <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
+                            <label for="request_method">Request Method</label><span data-bind="text: request_method"/>
+                            <label for="request_headers">Request Headers</label>
+                            <ul data-bind="foreach: request_headers">
+                                <li data-bind="text: data"/>
+                            </ul>
+                            <label for="request_data">Request Data</label><span data-bind="text: request_data"/>                                                        
+                        </td>
+                    </tr>
+                    <!-- ko foreach: repose_flow -->
                     <tr>
-                    
+                        <td data-bind="if: type==='request'" >
+                            <label for="step">Step:</label>
+                            <span data-bind="text: id"/>
+                            <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
+                            <label for="request_method">Request Method</label><span data-bind="text: request_method"/>
+                            <label for="request_headers">Request Headers</label>
+                            <ul data-bind="foreach: request_headers">
+                                <li data-bind="text: data"/>
+                            </ul>
+                            <label for="request_data">Request Data</label><span data-bind="text: request_data"/>                                                        
+                        </td>
+                        <td data-bind="if: type==='response'" >
+                            <label for="step">Step:</label>
+                            <span data-bind="text: id"/>
+                            <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
+                            <label for="response_headers">Response Headers</label>
+                            <ul data-bind="foreach: response_headers">
+                                <li data-bind="text: data"/>
+                            </ul>
+                            <label for="response_data">Response Data</label><span data-bind="text: response_data"/>                                                        
+                        </td>
+                    </tr>
+                    <!-- /ko -->
+                    <tr data-bind="attr: { rowspan: repose_flow.length }, with: response_to_client">
+                        <td>
+                            <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
+                            <label for="response_headers">Response Headers</label>
+                            <ul data-bind="foreach: response_headers">
+                                <li data-bind="text: data"/>
+                            </ul>
+                            <label for="response_data">Response Data</label><span data-bind="text: response_data"/>                                                        
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -308,7 +351,7 @@
                 self.selected_version = ko.observable();
                 self.number_of_nodes = ko.observable();
                 self.test_environment = ko.observable();
-                self.responseData = ko.observable();
+                self.responseData = ko.observable(new Response(''));
                 
                 self.dd_nodes = ko.observableArray([]);
                 
@@ -366,6 +409,8 @@
                             data: ko.toJSON(request_setup),
                             success: function(data) {
                                 //load data into responseData
+                                self.responseData(new Response(data));
+                                self.responseTemplate = 'responseTemplate';
                                 console.log(data);
                             }
                         });
@@ -465,6 +510,10 @@
           
             ko.applyBindings(new WizardModel());
           });
+          
+          function Response(response){
+            this.responseData = ko.observable(response);
+          }
           
           function Filter(item){
             this.id = ko.observable(item.id);
