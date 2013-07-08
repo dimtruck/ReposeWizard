@@ -176,7 +176,7 @@ post '/execute_request/:guid' do |guid|
     ],
     'response_to_client' => {
       'response_time' => 563,
-      'response_headers' => [],
+      'response_headers' => [{'data' => 'accept: application/xml'}],
       'response_data' => 'blahbalh'
     }
   }

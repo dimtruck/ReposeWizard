@@ -120,6 +120,7 @@
                         <textarea data-bind="value: request_data"></textarea>
                     </div>
                     <button type="button" data-bind="click: sendRequest">Send One Request</button>
+                    <div data-bind="template: { name: 'responseTemplate', data: responseData} "></div>
                     <div>
                         <h3>Benchmark data (optional for benchmarking)</h3>
                         <label for="number_of_requests">Number of requests:</label>
@@ -132,8 +133,8 @@
                         <input data-bind="value: window_size"/>
                     </div>
                     <button type="button" data-bind="click: benchmark">Benchmark</button>
+                    <div data-bind="template: { name: 'benchmarkTemplate', data: benchmarkData} "></div>
                 </fieldset>
-                <div data-bind="template: { name: 'responseTemplate', data: responseData} "></div>
                 Simple client with options for methods, headers, and request.  Output will be request info, response info, and any other requests being made internally by Repose as well as response time.  One other options is to run a "benchmark test," which spins up apache benchmark and allows user to specify # of requests (max: 1000), concurrency (max: 100), time limit and window size.  Runs first against service directly and then via Repose.
               </div>
             </div>
@@ -177,30 +178,53 @@
 		
 		</div>
         
+        <script type="text/html" id="benchmarkTemplate">
+            <div id="benchmarkTabs" data-bind="with: responseData">
+                <ul>
+                    <li><a href="#direct-tab">Directly to Origin</a></li>
+                    <li><a href="#via-repose-tab">Through Repose</a></li>
+                    <li><a href="#comparison-tab">Comparison</a></li>
+                </ul>
+                <div id="direct-tab">
+                    <p>
+                            benchmark output with calls directly to origin service
+                    </p>
+                </div>
+                <div id="via-repose-tab">
+                    <p>
+                            benchmark output with calls via repose to origin service
+                    </p>
+                </div>
+                <div id="comparison-tab">
+                    <p>
+                            comparison between repose and origin service with notes                                                      
+                    </p>
+                </div>
+            </div>        
+        </script>
+        
         <script type="text/html" id="responseTemplate">
-            <table data-bind="with: responseData">
-                <thead>
-                    <tr>
-                        <th>Request</th>
-                        <th>Repose</th>
-                        <th>Response</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr data-bind="attr: { rowspan: repose_flow.length }, with: request_from_client">
-                        <td>
-                            <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
-                            <label for="request_method">Request Method</label><span data-bind="text: request_method"/>
+            <div id="responseTabs" data-bind="with: responseData">
+                <ul>
+                    <li><a href="#request-tab">Request</a></li>
+                    <li><a href="#repose-tab">Repose</a></li>
+                    <li><a href="#response-tab">Response</a></li>
+                </ul>
+                <div id="request-tab">
+                    <p>
+                            <label for="request_uri">Request URI</label><span data-bind="text: request_from_client.request_uri"/>
+                            <label for="request_method">Request Method</label><span data-bind="text: request_from_client.request_method"/>
                             <label for="request_headers">Request Headers</label>
-                            <ul data-bind="foreach: request_headers">
+                            <ul data-bind="foreach: request_from_client.request_headers">
                                 <li data-bind="text: data"/>
                             </ul>
-                            <label for="request_data">Request Data</label><span data-bind="text: request_data"/>                                                        
-                        </td>
-                    </tr>
+                            <label for="request_data">Request Data</label><span data-bind="text: request_from_client.request_data"/>                                                        
+                    </p>
+                </div>
+                <div id="repose-tab">
                     <!-- ko foreach: repose_flow -->
-                    <tr>
-                        <td data-bind="if: type==='request'" >
+                    <div>
+                        <!-- ko if: type==='request' -->
                             <label for="step">Step:</label>
                             <span data-bind="text: id"/>
                             <label for="request_uri">Request URI</label><span data-bind="text: request_uri"/>
@@ -210,31 +234,31 @@
                                 <li data-bind="text: data"/>
                             </ul>
                             <label for="request_data">Request Data</label><span data-bind="text: request_data"/>                                                        
-                        </td>
-                        <td data-bind="if: type==='response'" >
+                        <!-- /ko -->
+                        <!-- ko if: type==='response' -->
                             <label for="step">Step:</label>
-                            <span data-bind="text: id"/>
+                            <span data-bind="text: id"></span>
                             <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
                             <label for="response_headers">Response Headers</label>
                             <ul data-bind="foreach: response_headers">
                                 <li data-bind="text: data"/>
                             </ul>
                             <label for="response_data">Response Data</label><span data-bind="text: response_data"/>                                                        
-                        </td>
-                    </tr>
+                        <!-- /ko -->
+                    </div>
                     <!-- /ko -->
-                    <tr data-bind="attr: { rowspan: repose_flow.length }, with: response_to_client">
-                        <td>
-                            <label for="response_time">Response Time</label><span data-bind="text: response_time"/>
+                </div>
+                <div id="response-tab">
+                    <p>
+                            <label for="response_time">Response Time</label><span data-bind="text: response_to_client.response_time"/>
                             <label for="response_headers">Response Headers</label>
-                            <ul data-bind="foreach: response_headers">
+                            <ul data-bind="foreach: response_to_client.response_headers">
                                 <li data-bind="text: data"/>
                             </ul>
-                            <label for="response_data">Response Data</label><span data-bind="text: response_data"/>                                                        
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            <label for="response_data">Response Data</label><span data-bind="text: response_to_client.response_data"/>                                                        
+                    </p>
+                </div>
+            </div>
         </script>
 							
 		<script type="text/html" id="clientAuthTemplate">
@@ -352,6 +376,7 @@
                 self.number_of_nodes = ko.observable();
                 self.test_environment = ko.observable();
                 self.responseData = ko.observable(new Response(''));
+                self.benchmarkData = ko.observable();
                 
                 self.dd_nodes = ko.observableArray([]);
                 
@@ -409,9 +434,10 @@
                             data: ko.toJSON(request_setup),
                             success: function(data) {
                                 //load data into responseData
+                                console.log(data);
                                 self.responseData(new Response(data));
                                 self.responseTemplate = 'responseTemplate';
-                                console.log(data);
+                                $('#responseTabs').tabs();
                             }
                         });
                         
@@ -421,6 +447,7 @@
                 
                 self.benchmark = function(){
                     //send benchmark here
+                    $('#benchmarkTabs').tabs();
                 };
                 
                 //$.fn.wizard.logging = true;
