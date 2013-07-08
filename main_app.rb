@@ -3,6 +3,69 @@ require 'json'
 require './Step.rb'
 require './Models/Version.rb'
 
+=begin
+
+We'll organize the JSON in an XML-like structure.  An individual node will be organized as:
+
+{
+  'node-name' => {
+     '_attr' => { <map of attributes },
+     '_chldrn' => [ <list of nodes> ]
+  }
+}
+
+A node is representated a map with a single entry, the node name and its contents.
+
+The node contents is a map of items: the attributes, and an array of children nodes.
+
+=end
+
+def createNode( xml, obj )
+
+  if obj.is_a?( Hash )  && obj.size == 1
+
+    obj.keys.each do | key |
+
+      attr = Array.new
+
+      if obj[ key ].has_key?( "_attr" )
+
+        obj[ key ][ "_attr" ].each_pair do | k, v |
+
+          attr << {k.to_sym => v}
+        end
+
+      end
+
+      obj[ key ].select { |k, v| k == "__attr" }
+
+      xml.send( key, *attr ) {
+
+        if obj[ key ].has_key?( "_chldrn")
+
+          obj[ key ][ "_chldrn" ].each do | child |
+
+            createNode( xml, child )
+          end
+        end
+      }
+    end
+  end
+
+  xml
+end
+
+def createXML( obj )
+
+  builder = Nokogiri::XML::Builder.new do | xml |
+
+    xml = createNode( xml, obj )
+
+  end
+
+  builder.to_xml
+end
+
 def valid_json? json_
   JSON.parse(json_)
   return true
@@ -85,6 +148,61 @@ get '/get_filters/:version' do |version|
     {'id'=>'2', 'english'=>'Authenticate my app with a 3rd party Auth provider','filter_list'=>'client-auth','description'=>'Repose will authenticate every matching request against a third party authentication provider prior to allowing requests come into your application'}
   ]
   body filters.to_json
+end
+
+post '/save_data_for_filter/:version_id/:filter_id' do | version_id, filter_id |
+
+   mock_input = {
+    'client-auth' => {
+      '_chldrn' => [ {
+          'openstack-auth' => {
+            '_attr' => {
+              'delegable' => "false",
+              'tenanted' => "false",
+              'request-groups' => "false",
+              'token-cache-timeout' => 600000,
+              'group-cache-timeout' => 600000,
+            },
+            '_chldrn' => [ {
+                               'identity-service' => {
+                                 '_attr' => {
+                                   'username' => 'admin_username',
+                                   'password' => 'admin_password',
+                                   'uri' => 'https://identity.example.com/v2.0/'
+                                 }
+                               }
+                             },
+                             {
+                               'client-mapping' => {
+                                 '_attr' => {
+                                   'id-regex' => '.*/servers/([-|\w]+)/?.*'
+                                 }
+                               }
+                             }
+                           ]
+          }
+        },
+        {
+          'endpoints-in-header' => {
+            '_attr' => {
+              'format' => 'some-format',
+              'cache-timeout' => 6000000,
+              'identity-contract-version' => 2
+            }
+          }
+        },
+        {
+          'white-list' => {
+            '_attr' => {
+              'uri-regex' => '/application\.wadl$'
+            }
+          }
+        }
+      ]
+    }
+  }
+
+  puts createXML( mock_input )
 end
 
 get '/get_data_for_filter/:filters' do |filters|
